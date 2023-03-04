@@ -37,27 +37,14 @@ pipeline {
             steps {
                 script {
                     echo "building the docker image..."
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                        sh "docker build -t chummy8091/demo-app:${IMAGE_NAME} ."
-                        sh "echo $PASS | docker login -u $USER --password-stdin"
-                        sh "docker push chummy8091/demo-app:${IMAGE_NAME}"
+                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                        sh "docker build -t ${IMAGE_REPO}:${IMAGE_NAME} ."
+                        sh "echo $PASS | docker login -u $USER --password-stdin ${ECR_REPO_URL}"
+                        sh "docker push ${IMAGE_REPO}:${IMAGE_NAME}"
                     }
                 }
             }
         }
-
-        // stage('build image') {
-        //     steps {
-        //         script {
-        //             echo "building the docker image..."
-        //             withCredentials([usernamePassword(credentialsId: 'ecr-credentials', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-        //                 sh "docker build -t ${IMAGE_REPO}:${IMAGE_NAME} ."
-        //                 sh "echo $PASS | docker login -u $USER --password-stdin ${ECR_REPO_URL}"
-        //                 sh "docker push ${IMAGE_REPO}:${IMAGE_NAME}"
-        //             }
-        //         }
-        //     }
-        // }
         stage('deploy') {
             environment {
                 AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
@@ -78,7 +65,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'Github_credential', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
                         sh 'git config user.email "jenkins@example.com"'
                         sh 'git config user.name "Jenkins"'
-                        sh "git remote set-url origin https://${USER}:${PASS}@github.com:ChummyO/java-maven-app.git"
+                        sh "git remote set-url origin https://${USER}:${PASS}@github.com/ChummyO/eks-ecr.git"
                         sh 'git add .'
                         sh 'git commit -m "ci: version bump"'
                         sh 'git push origin HEAD:main'
